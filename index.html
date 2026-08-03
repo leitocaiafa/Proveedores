@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gestión de Proveedores</title>
+
+<!-- ╔═══════════════════════════════════════════════════════╗ -->
+<!-- ║  CONFIGURACIÓN — completar estas 3 líneas y listo    ║ -->
+<!-- ╚═══════════════════════════════════════════════════════╝ -->
+<script>
+const SCRIPT_URL = 'TU_APPS_SCRIPT_URL_AQUI';  // URL del Web App desplegado
+const PASSWORD   = '';                           // Contraseña (dejar '' si no querés)
+const EMPRESA    = 'Gestión de Proveedores';     // Nombre en el header
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--nav:#1F3864;--blu:#2E75B6;--lbl:#D6E4F0;--grn:#22c55e;--red:#dc2626;
+  --bg:#f5f6fa;--card:#fff;--border:#e5e7eb;--txt:#111827;--sub:#6b7280;--muted:#9ca3af}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  background:var(--bg);color:var(--txt);font-size:14px;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--nav);color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.hdr-title{font-size:16px;font-weight:600;white-space:nowrap}
+.hdr-sub{font-size:11px;color:#93b4d4;margin-top:1px}
+.hdr-btns{display:flex;gap:6px;flex-shrink:0}
+.nav{display:flex;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{background:transparent;border:none;border-bottom:2px solid transparent;
+  color:#93b4d4;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;
+  white-space:nowrap;transition:all .15s}
+.nav-btn:hover{color:#fff}
+.nav-btn.on{background:#fff;color:var(--nav);border-bottom-color:var(--nav)}
+
+/* BUTTONS */
+.btn{cursor:pointer;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn-w{background:#fff;color:var(--nav)}
+.btn-g{background:#22c55e;color:#fff}
+.btn-b{background:var(--blu);color:#fff}
+.btn-nav{background:var(--nav);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--sub);
+  border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-pay{background:#dcfce7;color:#15803d;border:none;border-radius:6px;
+  padding:3px 9px;font-size:11px;cursor:pointer;font-weight:600}
+.btn-pay:hover{background:#bbf7d0}
+.btn-del{background:#fee2e2;color:#991b1b;border:none;border-radius:6px;
+  padding:3px 9px;font-size:11px;cursor:pointer}
+
+/* LAYOUT */
+main{padding:14px;max-width:960px;margin:0 auto}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-weight:600;color:var(--txt);margin-bottom:12px}
+
+/* STAT CARDS */
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.stat-lbl{font-size:11px;color:var(--sub);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:700}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.c-red{color:var(--red)} .c-amb{color:#d97706} .c-grn{color:#16a34a} .c-nav{color:var(--nav)}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--sub);
+  border-bottom:1px solid var(--border);background:#f9fafb;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f9fafb}
+.empty{text-align:center;padding:28px;color:var(--muted);font-size:13px}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-pend{background:#fef3c7;color:#92400e}
+.b-paid{background:#dcfce7;color:#15803d}
+.b-part{background:#dbeafe;color:#1d4ed8}
+.b-over{background:#fee2e2;color:#991b1b}
+.b-void{background:#f3f4f6;color:#6b7280}
+.b-act{background:#dcfce7;color:#15803d}
+.b-ina{background:#f3f4f6;color:#6b7280}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.fi{flex:1;min-width:140px}
+.fs{min-width:150px}
+
+/* FORMS */
+input,select,textarea{border:1px solid var(--border);border-radius:8px;
+  padding:8px 11px;font-size:13px;width:100%;background:#fff;color:var(--txt);outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--blu);box-shadow:0 0 0 2px #dbeafe}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.fg label{font-size:11px;font-weight:600;color:var(--sub)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fcol2{grid-column:1/-1}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;
+  align-items:center;justify-content:center;z-index:500;padding:16px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:540px;
+  max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-hdr{background:var(--nav);color:#fff;padding:14px 16px;
+  border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center}
+.modal-hdr h3{font-size:15px;font-weight:600}
+.modal-body{padding:16px}
+.modal-foot{padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:8px}
+.close-btn{background:transparent;border:none;color:#fff;font-size:22px;
+  cursor:pointer;line-height:1;padding:0 2px}
+
+/* SUPPLIER DETAIL */
+.det-hdr{background:var(--nav);color:#fff;border-radius:12px;padding:16px;margin-bottom:12px}
+.det-name{font-size:18px;font-weight:600;margin:4px 0}
+.det-meta{font-size:11px;color:#93b4d4}
+.det-balance{font-size:28px;font-weight:700;margin:6px 0 4px}
+.det-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.det-info-item{font-size:12px;color:#93b4d4}
+.det-info-item strong{display:block;color:#fff;margin-bottom:1px}
+.back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;
+  padding:5px 11px;font-size:12px;cursor:pointer;margin-bottom:10px;display:inline-block}
+.aging-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-top:8px}
+.aging-seg{height:100%;border-radius:2px;transition:width .3s}
+.aging-legend{display:flex;gap:12px;font-size:11px;margin-top:5px;flex-wrap:wrap}
+.det-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:12px}
+.det-tab{background:transparent;border:none;border-bottom:2px solid transparent;
+  padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--sub);margin-bottom:-1px}
+.det-tab.on{color:var(--nav);border-bottom-color:var(--nav)}
+
+/* LOADING / ERROR */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px;gap:12px;color:var(--sub);font-size:14px}
+.spinner{width:36px;height:36px;border:3px solid var(--lbl);border-top-color:var(--blu);
+  border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;
+  padding:14px 16px;color:#991b1b;font-size:13px;margin-bottom:12px;display:flex;
+  align-items:flex-start;gap:10px}
+.sync-bar{position:fixed;bottom:16px;right:16px;background:var(--nav);color:#fff;
+  border-radius:10px;padding:8px 14px;font-size:12px;display:flex;align-items:center;
+  gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:200;opacity:0;
+  transition:opacity .3s;pointer-events:none}
+.sync-bar.show{opacity:1}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-grn{background:#4ade80}
+.dot-spin{border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:spin .6s linear infinite}
+
+/* AMOUNTS */
+.amt-deb{color:var(--red);font-weight:600}
+.amt-cred{color:#16a34a;font-weight:600}
+.amt-bal-pos{color:var(--red);font-weight:600}
+.amt-bal-ok{color:#16a34a;font-weight:600}
+.link{color:var(--nav);cursor:pointer;font-weight:500;text-decoration:none}
+.link:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .g4{grid-template-columns:1fr 1fr}
+  .fgrid,.fgrid3{grid-template-columns:1fr}
+  .det-info{grid-template-columns:1fr 1fr}
+  .hdr-title{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="hdr-title" id="empresa-title"></div>
+      <div class="hdr-sub">Control de Pagos · Cuenta Corriente · Saldos</div>
+    </div>
+    <div class="hdr-btns">
+      <button class="btn btn-w" onclick="abrirModal('movimiento')">+ Movimiento</button>
+      <button class="btn btn-g" onclick="abrirModal('pago')">+ Pago</button>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn on" data-tab="dashboard" onclick="irTab('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn" data-tab="proveedores" onclick="irTab('proveedores',this)">🏢 Proveedores</button>
+    <button class="nav-btn" data-tab="movimientos" onclick="irTab('movimientos',this)">📄 Movimientos</button>
+    <button class="nav-btn" data-tab="pagos" onclick="irTab('pagos',this)">💳 Pagos</button>
+  </nav>
+</div>
+
+<!-- SYNC BAR -->
+<div class="sync-bar" id="sync-bar">
+  <div class="dot dot-spin" id="sync-dot"></div>
+  <span id="sync-msg">Guardando...</span>
+</div>
+
+<!-- MAIN -->
+<main id="main"></main>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" style="display:none" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3 id="modal-title"></h3>
+      <button class="close-btn" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════════════════════
+let S=[], M=[], P=[];        // proveedores, movimientos, pagos
+let tab='dashboard', detId=null;
+let busq='', fStatus='', fSupp='';
+let modalActivo=null;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════════════════
+const el   = id => document.getElementById(id);
+const fmt$ = n  => '$\u202F' + Math.round(n||0).toLocaleString('es-AR');
+const fmtD = s  => s ? new Date(s+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+const hoy  = () => new Date().toISOString().split('T')[0];
+const dPlus= (d,n)=>{ const r=new Date((d||hoy())+'T12:00:00'); r.setDate(r.getDate()+n); return r.toISOString().split('T')[0]; };
+const uid  = pre => pre+Date.now().toString(36).slice(-6).toUpperCase();
+const esc  = s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const getBalance = sid => {
+  const deb  = M.filter(m=>m.sid===sid).reduce((a,m)=>a+(+m.debit||0),0);
+  const cred = M.filter(m=>m.sid===sid).reduce((a,m)=>a+(+m.credit||0),0);
+  const paid = P.filter(p=>p.sid===sid).reduce((a,p)=>a+(+p.amount||0),0);
+  return deb - cred - paid;
+};
+const estEfectivo = m => m.status==='Pendiente' && m.due && m.due<hoy() ? 'Vencido' : m.status;
+const suppName    = sid => { const s=S.find(x=>x.id===sid); return s?s.name:sid; };
+const badgeCls    = st => ({Pendiente:'b-pend',Pagado:'b-paid','Pagado Parcial':'b-part',Vencido:'b-over',Anulado:'b-void'}[st]||'b-void');
+
+function aging(sid){
+  let curr=0,d30=0,d60=0,d90p=0;
+  M.filter(m=>m.sid===sid&&m.status==='Pendiente'&&+m.debit>0).forEach(m=>{
+    const dias=m.due?Math.floor((new Date(hoy())-new Date(m.due+'T12:00:00'))/86400000):0;
+    if(dias<=0) curr+=+m.debit;
+    else if(dias<=30) d30+=+m.debit;
+    else if(dias<=60) d60+=+m.debit;
+    else d90p+=+m.debit;
+  });
+  return {curr,d30,d60,d90p};
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  API — Google Apps Script
+// ══════════════════════════════════════════════════════════════════════════
+async function apiGet(params={}){
+  const url=new URL(SCRIPT_URL);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  const r=await fetch(url.toString(),{redirect:'follow'});
+  return r.json();
+}
+async function apiPost(data){
+  if(PASSWORD) data.pwd=PASSWORD;
+  const r=await fetch(SCRIPT_URL,{method:'POST',redirect:'follow',body:JSON.stringify(data)});
+  return r.json();
+}
+
+async function cargarDatos(){
+  el('main').innerHTML=`<div class="loading"><div class="spinner"></div><span>Conectando con el servidor...</span></div>`;
+  try{
+    const d=await apiGet({action:'getData'});
+    if(d.error) throw new Error(d.error);
+    S=d.proveedores||[]; M=d.movimientos||[]; P=d.pagos||[];
+    render();
+  }catch(err){
+    el('main').innerHTML=`<div style="padding:20px">
+      <div class="error-box">⚠️ <div><strong>No se pudo conectar con el servidor</strong><br>
+      Verificá que el SCRIPT_URL esté configurado correctamente.<br>
+      <small>${esc(err.message)}</small></div></div>
+    </div>`;
+  }
+}
+
+async function api(accion, hoja, fila, id, cambios){
+  syncShow('Guardando...');
+  try{
+    let res;
+    if(accion==='agregar') res=await apiPost({action:'agregar',hoja,fila});
+    if(accion==='actualizar') res=await apiPost({action:'actualizar',hoja,id,cambios});
+    if(accion==='eliminar') res=await apiPost({action:'eliminar',hoja,id});
+    if(res&&res.error) throw new Error(res.error);
+    syncShow('Guardado ✓',true);
+    setTimeout(()=>el('sync-bar').classList.remove('show'),1800);
+  }catch(err){
+    syncShow('Error al guardar: '+err.message,false,true);
+    setTimeout(()=>el('sync-bar').classList.remove('show'),3000);
+  }
+}
+
+function syncShow(msg,ok=false,err=false){
+  const bar=el('sync-bar'), dot=el('sync-dot'), sp=el('sync-msg');
+  sp.textContent=msg;
+  dot.className=ok?'dot dot-grn':err?'dot'+(dot.style.background='#f87171',''):' dot dot-spin';
+  if(ok) dot.className='dot dot-grn';
+  bar.classList.add('show');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NAVEGACIÓN
+// ══════════════════════════════════════════════════════════════════════════
+function irTab(t,btn){
+  tab=t; detId=null; busq=''; fStatus=''; fSupp='';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  render();
+}
+function verDetalle(sid){ detId=sid; tab='proveedores'; render(); }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RENDER PRINCIPAL
+// ══════════════════════════════════════════════════════════════════════════
+function render(){
+  const main=el('main');
+  if(tab==='dashboard')                  main.innerHTML=rDashboard();
+  else if(tab==='proveedores'&&detId)    main.innerHTML=rDetalle(detId);
+  else if(tab==='proveedores')           main.innerHTML=rProveedores();
+  else if(tab==='movimientos')           main.innerHTML=rMovimientos();
+  else if(tab==='pagos')                 main.innerHTML=rPagos();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function rDashboard(){
+  let total=0,vencido=0,proximo=0,pagMes=0;
+  const h=hoy(), en30=dPlus(h,30), mesIni=h.slice(0,8)+'01';
+  S.forEach(s=>{ const b=getBalance(s.id); if(b>0) total+=b; });
+  M.forEach(m=>{
+    if(m.status==='Pendiente'&&+m.debit>0){
+      if(m.due&&m.due<h) vencido+=+m.debit;
+      else if(m.due&&m.due<=en30) proximo+=+m.debit;
+    }
+  });
+  P.forEach(p=>{ if(p.date>=mesIni) pagMes+=+p.amount; });
+  const venc=M.filter(m=>estEfectivo(m)==='Vencido');
+  const prox=M.filter(m=>m.status==='Pendiente'&&m.due&&m.due>=h&&m.due<=en30&&+m.debit>0)
+              .sort((a,b)=>a.due.localeCompare(b.due)).slice(0,8);
+
+  const saldoRows=S.filter(s=>s.active&&getBalance(s.id)>0).map(s=>{
+    const b=getBalance(s.id), ag=aging(s.id), tot=ag.curr+ag.d30+ag.d60+ag.d90p||1;
+    const w=v=>tot>0?Math.round(v/tot*100):0;
+    return `<tr>
+      <td><span class="link" onclick="verDetalle('${s.id}')">${esc(s.name)}</span></td>
+      <td class="amt-bal-pos">${fmt$(b)}</td>
+      <td style="color:#16a34a">${ag.curr>0?fmt$(ag.curr):'—'}</td>
+      <td style="color:#d97706">${ag.d30>0?fmt$(ag.d30):'—'}</td>
+      <td style="color:#dc2626">${ag.d60+ag.d90p>0?fmt$(ag.d60+ag.d90p):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const vencRows=venc.map(m=>`<tr>
+    <td>${fmtD(m.due)}</td>
+    <td><span class="link" onclick="verDetalle('${m.sid}')">${esc(suppName(m.sid))}</span></td>
+    <td>${esc(m.type+' '+m.num)}</td>
+    <td class="amt-deb">${fmt$(m.debit)}</td>
+    <td><button class="btn-pay" onclick="pagoRapido('${m.id}')">Registrar pago</button></td>
+  </tr>`).join('');
+
+  const proxRows=prox.map(m=>{
+    const dias=Math.floor((new Date(m.due+'T12:00:00')-new Date(h+'T12:00:00'))/86400000);
+    return `<tr>
+      <td>${fmtD(m.due)} <span style="color:#d97706;font-size:11px">(en ${dias}d)</span></td>
+      <td><span class="link" onclick="verDetalle('${m.sid}')">${esc(suppName(m.sid))}</span></td>
+      <td>${esc(m.type+' '+m.num)}</td>
+      <td class="amt-deb">${fmt$(m.debit)}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div class="g4">
+    <div class="stat"><div class="stat-lbl">Deuda total</div><div class="stat-val c-red">${fmt$(total)}</div></div>
+    <div class="stat"><div class="stat-lbl">Vencido</div><div class="stat-val c-red">${fmt$(vencido)}</div><div class="stat-sub">${venc.length} comprobante(s)</div></div>
+    <div class="stat"><div class="stat-lbl">Vence próx. 30 días</div><div class="stat-val c-amb">${fmt$(proximo)}</div></div>
+    <div class="stat"><div class="stat-lbl">Pagado este mes</div><div class="stat-val c-grn">${fmt$(pagMes)}</div></div>
+  </div>
+  ${saldoRows?`<div class="card">
+    <div class="card-hdr">Saldos por proveedor</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Proveedor</th><th>Saldo total</th><th>Corriente</th><th>Vencido 1-30d</th><th>Vencido +30d</th></tr></thead>
+    <tbody>${saldoRows}</tbody></table></div></div>`:''}
+  ${vencRows?`<div class="card">
+    <div class="card-hdr" style="color:#dc2626">⚠ Facturas vencidas</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Vencimiento</th><th>Proveedor</th><th>Comprobante</th><th>Monto</th><th></th></tr></thead>
+    <tbody>${vencRows}</tbody></table></div></div>`:''}
+  ${proxRows?`<div class="card">
+    <div class="card-hdr">Próximos vencimientos</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Vencimiento</th><th>Proveedor</th><th>Comprobante</th><th>Monto</th></tr></thead>
+    <tbody>${proxRows}</tbody></table></div></div>`:''}`;
+}
+
+// ── PROVEEDORES ────────────────────────────────────────────────────────────
+function rProveedores(){
+  const lista=S.filter(s=>!busq||s.name.toLowerCase().includes(busq.toLowerCase())||s.id.includes(busq)||s.cuit.includes(busq));
+  const rows=lista.map(s=>{
+    const b=getBalance(s.id);
+    return `<tr>
+      <td><strong>${esc(s.id)}</strong></td>
+      <td><span class="link" onclick="verDetalle('${s.id}')">${esc(s.name)}</span>
+        <div style="font-size:11px;color:var(--muted)">${esc(s.cuit)}</div></td>
+      <td>${esc(s.cat)}</td>
+      <td>${s.payDays===0?'Contado':s.payDays+'d'}</td>
+      <td>${b>0?`<span class="amt-bal-pos">${fmt$(b)}</span>`:`<span class="amt-bal-ok">Al día</span>`}</td>
+      <td><span class="badge ${s.active?'b-act':'b-ina'}">${s.active?'Activo':'Inactivo'}</span></td>
+      <td><button class="btn-pay" onclick="verDetalle('${s.id}')">Ver detalle</button></td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="filters">
+    <input class="fi" type="text" placeholder="Buscar por nombre, ID o CUIT..." value="${esc(busq)}" oninput="busq=this.value;render()"/>
+    <button class="btn btn-nav btn-sm" onclick="abrirModal('proveedor')">+ Nuevo proveedor</button>
+    <button class="btn-ghost btn-sm" onclick="exportarCSV('proveedores')">⬇ CSV</button>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Razón Social</th><th>Rubro</th><th>Cond. Pago</th><th>Saldo</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7" class="empty">Sin resultados</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+// ── DETALLE PROVEEDOR ──────────────────────────────────────────────────────
+function rDetalle(sid){
+  const s=S.find(x=>x.id===sid); if(!s) return '';
+  const b=getBalance(sid), ag=aging(sid);
+  const smovs=M.filter(m=>m.sid===sid).sort((a,c)=>c.date.localeCompare(a.date));
+  const spays=P.filter(p=>p.sid===sid).sort((a,c)=>c.date.localeCompare(a.date));
+  const tot=ag.curr+ag.d30+ag.d60+ag.d90p||1;
+  const w=v=>Math.max(1,Math.round(v/tot*100));
+
+  const mRows=smovs.map(m=>{
+    const es=estEfectivo(m);
+    return `<tr>
+      <td>${fmtD(m.date)}</td><td>${fmtD(m.due)}</td>
+      <td><strong>${esc(m.type)}</strong><br><span style="font-size:10px;color:var(--muted)">${esc(m.num)}</span></td>
+      <td>${esc(m.desc)}</td>
+      <td>${+m.debit?`<span class="amt-deb">${fmt$(m.debit)}</span>`:'—'}</td>
+      <td>${+m.credit?`<span class="amt-cred">${fmt$(m.credit)}</span>`:'—'}</td>
+      <td><span class="badge ${badgeCls(es)}">${es}</span></td>
+      <td>${m.status==='Pendiente'||m.status==='Pagado Parcial'?`<button class="btn-pay" onclick="pagoRapido('${m.id}')">Pagar</button>`:''}</td>
+    </tr>`;
+  }).join('');
+
+  const pRows=spays.map(p=>`<tr>
+    <td>${fmtD(p.date)}</td>
+    <td><span class="badge b-paid">${esc(p.method)}</span></td>
+    <td>${esc(p.ref)||'—'}</td>
+    <td>${esc(p.bank)||'—'}</td>
+    <td class="amt-cred"><strong>${fmt$(p.amount)}</strong></td>
+    <td style="font-size:11px">${esc(p.relDoc)||'—'}</td>
+    <td style="font-size:11px;color:var(--muted)">${esc(p.notes)||''}</td>
+  </tr>`).join('');
+
+  return `
+  <button class="back-btn" onclick="detId=null;render()">← Volver a proveedores</button>
+  <div class="det-hdr">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="det-meta">${esc(s.id)} · ${esc(s.cat)} · ${s.payDays===0?'Pago al contado':s.payDays+' días'}</div>
+        <div class="det-name">${esc(s.name)}</div>
+        <div class="det-meta">CUIT: ${esc(s.cuit)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#93b4d4">Saldo pendiente</div>
+        <div class="det-balance" style="${b>0?'color:#fca5a5':'color:#86efac'}">${fmt$(b)}</div>
+        <button class="btn btn-g btn-sm" onclick="abrirModal('pago','${sid}')">+ Registrar pago</button>
+      </div>
+    </div>
+    <div class="det-info">
+      <div class="det-info-item"><strong>${esc(s.contact||'—')}</strong>Contacto</div>
+      <div class="det-info-item"><strong>${esc(s.phone||'—')}</strong>Teléfono</div>
+      <div class="det-info-item"><strong>${esc(s.email||'—')}</strong>E-mail</div>
+    </div>
+    ${b>0?`<div class="aging-bar">
+      ${ag.curr>0?`<div class="aging-seg" style="width:${w(ag.curr)}%;background:#4ade80" title="Corriente"></div>`:''}
+      ${ag.d30>0?`<div class="aging-seg" style="width:${w(ag.d30)}%;background:#fbbf24" title="1-30d"></div>`:''}
+      ${ag.d60>0?`<div class="aging-seg" style="width:${w(ag.d60)}%;background:#f97316" title="31-60d"></div>`:''}
+      ${ag.d90p>0?`<div class="aging-seg" style="width:${w(ag.d90p)}%;background:#ef4444" title="+60d"></div>`:''}
+    </div>
+    <div class="aging-legend">
+      ${ag.curr>0?`<span style="color:#4ade80">● Corriente ${fmt$(ag.curr)}</span>`:''}
+      ${ag.d30>0?`<span style="color:#fbbf24">● 1-30d ${fmt$(ag.d30)}</span>`:''}
+      ${ag.d60>0?`<span style="color:#f97316">● 31-60d ${fmt$(ag.d60)}</span>`:''}
+      ${ag.d90p>0?`<span style="color:#ef4444">● +60d ${fmt$(ag.d90p)}</span>`:''}
+    </div>`:``}
+  </div>
+  <div class="det-tabs">
+    <button class="det-tab on" id="dtab-m" onclick="switchDtab('m')">Movimientos (${smovs.length})</button>
+    <button class="det-tab" id="dtab-p" onclick="switchDtab('p')">Pagos (${spays.length})</button>
+  </div>
+  <div class="card" id="dpanel-m">
+    <div class="card-hdr">Movimientos
+      <button class="btn btn-nav btn-sm" onclick="abrirModal('movimiento','${sid}')">+ Nuevo</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Vcto.</th><th>Comprobante</th><th>Descripción</th><th>Debe</th><th>Haber</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${mRows||'<tr><td colspan="8" class="empty">Sin movimientos</td></tr>'}</tbody>
+    </table></div>
+  </div>
+  <div class="card" id="dpanel-p" style="display:none">
+    <div class="card-hdr">Pagos registrados</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Forma</th><th>Referencia</th><th>Banco</th><th>Monto</th><th>Comprobante</th><th>Notas</th></tr></thead>
+      <tbody>${pRows||'<tr><td colspan="7" class="empty">Sin pagos</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function switchDtab(t){
+  ['m','p'].forEach(x=>{
+    el('dtab-'+x).classList.toggle('on',x===t);
+    el('dpanel-'+x).style.display=x===t?'':'none';
+  });
+}
+
+// ── MOVIMIENTOS ────────────────────────────────────────────────────────────
+function rMovimientos(){
+  let rows=M.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(busq) rows=rows.filter(m=>m.num.includes(busq)||m.desc.toLowerCase().includes(busq.toLowerCase())||suppName(m.sid).toLowerCase().includes(busq.toLowerCase()));
+  if(fStatus) rows=rows.filter(m=>estEfectivo(m)===fStatus);
+  if(fSupp) rows=rows.filter(m=>m.sid===fSupp);
+  const sOpts=S.map(s=>`<option value="${s.id}" ${fSupp===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const trs=rows.map(m=>{
+    const es=estEfectivo(m);
+    return `<tr>
+      <td style="font-size:11px;color:var(--muted)">${m.id}</td>
+      <td>${fmtD(m.date)}</td><td>${fmtD(m.due)}</td>
+      <td><span class="link" onclick="verDetalle('${m.sid}')">${esc(suppName(m.sid))}</span></td>
+      <td><strong>${esc(m.type)}</strong></td>
+      <td style="font-size:11px">${esc(m.num)}</td>
+      <td>${esc(m.desc)}</td>
+      <td>${+m.debit?`<span class="amt-deb">${fmt$(m.debit)}</span>`:'—'}</td>
+      <td>${+m.credit?`<span class="amt-cred">${fmt$(m.credit)}</span>`:'—'}</td>
+      <td><span class="badge ${badgeCls(es)}">${es}</span></td>
+      <td>${m.status==='Pendiente'||m.status==='Pagado Parcial'?`<button class="btn-pay" onclick="pagoRapido('${m.id}')">Pagar</button>`:''}</td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="filters">
+    <input class="fi" type="text" placeholder="Buscar..." value="${esc(busq)}" oninput="busq=this.value;render()"/>
+    <select class="fs" onchange="fStatus=this.value;render()">
+      <option value="">Todos los estados</option>
+      <option value="Pendiente" ${fStatus==='Pendiente'?'selected':''}>Pendiente</option>
+      <option value="Vencido" ${fStatus==='Vencido'?'selected':''}>Vencido</option>
+      <option value="Pagado Parcial" ${fStatus==='Pagado Parcial'?'selected':''}>Pagado Parcial</option>
+      <option value="Pagado" ${fStatus==='Pagado'?'selected':''}>Pagado</option>
+    </select>
+    <select class="fs" onchange="fSupp=this.value;render()">
+      <option value="">Todos los proveedores</option>${sOpts}
+    </select>
+    <button class="btn-ghost btn-sm" onclick="exportarCSV('movimientos')">⬇ CSV</button>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Fecha</th><th>Vcto.</th><th>Proveedor</th><th>Tipo</th><th>Comprobante</th><th>Descripción</th><th>Debe</th><th>Haber</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${trs||'<tr><td colspan="11" class="empty">Sin resultados</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+// ── PAGOS ──────────────────────────────────────────────────────────────────
+function rPagos(){
+  let rows=P.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(busq) rows=rows.filter(p=>p.ref.includes(busq)||suppName(p.sid).toLowerCase().includes(busq.toLowerCase())||p.relDoc.toLowerCase().includes(busq.toLowerCase()));
+  if(fSupp) rows=rows.filter(p=>p.sid===fSupp);
+  const sOpts=S.map(s=>`<option value="${s.id}" ${fSupp===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const total=rows.reduce((a,p)=>a+(+p.amount||0),0);
+  const trs=rows.map(p=>`<tr>
+    <td style="font-size:11px;color:var(--muted)">${p.id}</td>
+    <td>${fmtD(p.date)}</td>
+    <td><span class="link" onclick="verDetalle('${p.sid}')">${esc(suppName(p.sid))}</span></td>
+    <td><span class="badge b-paid">${esc(p.method)}</span></td>
+    <td>${esc(p.ref)||'—'}</td>
+    <td>${esc(p.bank)||'—'}</td>
+    <td class="amt-cred"><strong>${fmt$(p.amount)}</strong></td>
+    <td style="font-size:11px">${esc(p.relDoc)||'—'}</td>
+    <td style="font-size:11px;color:var(--muted)">${esc(p.notes)||''}</td>
+  </tr>`).join('');
+  return `
+  <div class="filters">
+    <input class="fi" type="text" placeholder="Buscar..." value="${esc(busq)}" oninput="busq=this.value;render()"/>
+    <select class="fs" onchange="fSupp=this.value;render()">
+      <option value="">Todos los proveedores</option>${sOpts}
+    </select>
+    <button class="btn-ghost btn-sm" onclick="exportarCSV('pagos')">⬇ CSV</button>
+  </div>
+  <div class="stat" style="display:inline-flex;align-items:center;gap:12px;padding:10px 16px;margin-bottom:12px">
+    <span style="font-size:12px;color:var(--sub)">Total pagado (filtro actual):</span>
+    <span class="amt-cred" style="font-size:18px;font-weight:700">${fmt$(total)}</span>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Fecha</th><th>Proveedor</th><th>Forma</th><th>Referencia</th><th>Banco</th><th>Monto</th><th>Comprobante</th><th>Notas</th></tr></thead>
+      <tbody>${trs||'<tr><td colspan="9" class="empty">Sin resultados</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MODALES
+// ══════════════════════════════════════════════════════════════════════════
+function abrirModal(tipo, presetSid=''){
+  modalActivo=tipo;
+  const sOpts='<option value="">— Seleccioná —</option>'+
+    S.filter(s=>s.active).map(s=>`<option value="${s.id}" ${presetSid===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const mt=el('modal-title'), mb=el('modal-body'), mf=el('modal-foot');
+
+  if(tipo==='movimiento'){
+    mt.textContent='Nuevo movimiento';
+    mb.innerHTML=`
+    <div class="fgrid">
+      <div class="fg"><label>Proveedor *</label><select id="f-sid" onchange="actualizarVto()">${sOpts}</select></div>
+      <div class="fg"><label>Fecha *</label><input type="date" id="f-date" value="${hoy()}" onchange="actualizarVto()"/></div>
+      <div class="fg"><label>Tipo de comprobante</label>
+        <select id="f-type"><option>FC-A</option><option>FC-B</option><option>FC-C</option>
+          <option>NC-A</option><option>NC-B</option><option>NC-C</option>
+          <option>ND-A</option><option>ND-B</option><option>ND-C</option><option>Recibo</option></select></div>
+      <div class="fg"><label>N° comprobante</label><input type="text" id="f-num" placeholder="0001-00000000"/></div>
+      <div class="fg fcol2"><label>Descripción</label><input type="text" id="f-desc" placeholder="Descripción de la compra..."/></div>
+      <div class="fg"><label>Debe / Factura ($)</label><input type="number" id="f-debit" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Haber / Nota de Crédito ($)</label><input type="number" id="f-credit" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Vencimiento (auto)</label><input type="date" id="f-due"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="f-status"><option>Pendiente</option><option>Pagado</option><option>Pagado Parcial</option><option>Anulado</option></select></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" placeholder="Observaciones opcionales..."/></div>
+    </div>`;
+    if(presetSid) setTimeout(actualizarVto, 50);
+    mf.innerHTML='<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-nav" onclick="guardarMovimiento()">Guardar movimiento</button>';
+  }
+  else if(tipo==='pago'){
+    mt.textContent='Registrar pago';
+    mb.innerHTML=`
+    <div class="fgrid">
+      <div class="fg"><label>Proveedor *</label><select id="f-sid">${sOpts}</select></div>
+      <div class="fg"><label>Fecha *</label><input type="date" id="f-date" value="${hoy()}"/></div>
+      <div class="fg"><label>Monto ($) *</label><input type="number" id="f-amount" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Forma de pago</label>
+        <select id="f-method"><option>Transferencia</option><option>Efectivo</option><option>Cheque</option>
+          <option>Cheque Diferido</option><option>Débito</option><option>Crédito</option><option>Otro</option></select></div>
+      <div class="fg"><label>N° referencia / cheque</label><input type="text" id="f-ref" placeholder="TRF-0001..."/></div>
+      <div class="fg"><label>Banco / Entidad</label><input type="text" id="f-bank" placeholder="Banco Nación..."/></div>
+      <div class="fg fcol2"><label>Comprobante relacionado</label><input type="text" id="f-reldoc" placeholder="FC-A 0001-00000000..."/></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" placeholder="Observaciones..."/></div>
+    </div>`;
+    mf.innerHTML='<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-g" onclick="guardarPago()">Guardar pago</button>';
+  }
+  else if(tipo==='proveedor'){
+    const nxtId='P'+String((S.length?Math.max(...S.map(s=>parseInt(s.id.slice(1))||0)):0)+1).padStart(3,'0');
+    mt.textContent='Nuevo proveedor';
+    mb.innerHTML=`
+    <div class="fgrid">
+      <div class="fg"><label>ID (auto)</label><input type="text" id="f-id" value="${nxtId}" readonly style="background:#f9fafb;color:var(--muted)"/></div>
+      <div class="fg"><label>Razón Social *</label><input type="text" id="f-name" placeholder="Nombre o razón social..."/></div>
+      <div class="fg"><label>CUIT / DNI</label><input type="text" id="f-cuit" placeholder="30-00000000-0"/></div>
+      <div class="fg"><label>Contacto</label><input type="text" id="f-contact" placeholder="Nombre contacto..."/></div>
+      <div class="fg"><label>Teléfono</label><input type="text" id="f-phone" placeholder="011-0000-0000"/></div>
+      <div class="fg"><label>E-mail</label><input type="text" id="f-email" placeholder="mail@proveedor.com"/></div>
+      <div class="fg"><label>Condición de pago (días)</label><input type="number" id="f-paydays" value="30" min="0"/></div>
+      <div class="fg"><label>Rubro / Categoría</label>
+        <select id="f-cat"><option>Insumos</option><option>Materiales</option><option>Servicios</option>
+          <option>Papelería</option><option>Alimentos</option><option>Logística</option>
+          <option>Importados</option><option>Limpieza</option><option>Mantenimiento</option><option>Otros</option></select></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" placeholder="Observaciones..."/></div>
+    </div>`;
+    mf.innerHTML='<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-nav" onclick="guardarProveedor()">Guardar proveedor</button>';
+  }
+  el('overlay').style.display='flex';
+  setTimeout(()=>{ const fi=el('modal-body').querySelector('input,select'); if(fi) fi.focus(); },100);
+}
+
+function cerrarModal(e){
+  if(e&&e.target!==el('overlay')) return;
+  el('overlay').style.display='none'; modalActivo=null;
+}
+
+function actualizarVto(){
+  const sid=gv('f-sid'), date=gv('f-date');
+  const s=S.find(x=>x.id===sid);
+  const fDue=el('f-due');
+  if(s&&date&&fDue) fDue.value=dPlus(date,s.payDays||0);
+}
+
+const gv  = id => (el(id)?.value||'').trim();
+const gvn = id => parseFloat(el(id)?.value)||0;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  GUARDAR DATOS
+// ══════════════════════════════════════════════════════════════════════════
+async function guardarMovimiento(){
+  const sid=gv('f-sid'); if(!sid){alert('Seleccioná un proveedor');return;}
+  const fila={id:uid('M'),date:gv('f-date')||hoy(),due:gv('f-due'),sid,
+    type:gv('f-type')||'FC-A',num:gv('f-num'),desc:gv('f-desc'),
+    debit:gvn('f-debit'),credit:gvn('f-credit'),
+    status:gv('f-status')||'Pendiente',notes:gv('f-notes')};
+  M.push(fila);
+  el('overlay').style.display='none';
+  render();
+  await api('agregar','movimientos',fila);
+}
+
+async function guardarPago(){
+  const sid=gv('f-sid'); if(!sid){alert('Seleccioná un proveedor');return;}
+  const amount=gvn('f-amount'); if(!amount){alert('Ingresá un monto');return;}
+  const fila={id:uid('PAG'),date:gv('f-date')||hoy(),sid,
+    method:gv('f-method')||'Transferencia',ref:gv('f-ref'),bank:gv('f-bank'),
+    amount,relDoc:gv('f-reldoc'),notes:gv('f-notes')};
+  P.push(fila);
+  el('overlay').style.display='none';
+  render();
+  await api('agregar','pagos',fila);
+}
+
+async function guardarProveedor(){
+  const name=gv('f-name'); if(!name){alert('Ingresá la razón social');return;}
+  const nxtId='P'+String((S.length?Math.max(...S.map(s=>parseInt(s.id.slice(1))||0)):0)+1).padStart(3,'0');
+  const fila={id:nxtId,name,cuit:gv('f-cuit'),contact:gv('f-contact'),
+    phone:gv('f-phone'),email:gv('f-email'),
+    payDays:parseInt(el('f-paydays')?.value)||0,
+    cat:gv('f-cat')||'Otros',active:true,notes:gv('f-notes')};
+  S.push(fila);
+  el('overlay').style.display='none';
+  render();
+  await api('agregar','proveedores',fila);
+}
+
+function pagoRapido(mid){
+  const m=M.find(x=>x.id===mid); if(!m) return;
+  abrirModal('pago',m.sid);
+  setTimeout(()=>{ const fd=el('f-reldoc'); if(fd) fd.value=m.type+' '+m.num; },80);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  EXPORTAR CSV
+// ══════════════════════════════════════════════════════════════════════════
+function exportarCSV(tipo){
+  let headers, rows, nombre;
+  if(tipo==='movimientos'){
+    headers=['ID','Fecha','Vencimiento','Proveedor','Tipo','Comprobante','Descripción','Debe','Haber','Estado','Notas'];
+    rows=M.map(m=>[m.id,m.date,m.due,suppName(m.sid),m.type,m.num,m.desc,m.debit,m.credit,m.status,m.notes]);
+    nombre='movimientos';
+  } else if(tipo==='pagos'){
+    headers=['ID','Fecha','Proveedor','Forma','Referencia','Banco','Monto','Comprobante','Notas'];
+    rows=P.map(p=>[p.id,p.date,suppName(p.sid),p.method,p.ref,p.bank,p.amount,p.relDoc,p.notes]);
+    nombre='pagos';
+  } else {
+    headers=['ID','Razón Social','CUIT','Teléfono','Email','Contacto','Días Pago','Rubro','Activo','Notas','Saldo'];
+    rows=S.map(s=>[s.id,s.name,s.cuit,s.phone,s.email,s.contact,s.payDays,s.cat,s.active,s.notes,getBalance(s.id)]);
+    nombre='proveedores';
+  }
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${nombre}_${hoy()}.csv`;
+  a.click();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════════════
+el('empresa-title').textContent=EMPRESA;
+cargarDatos();
+// Auto-refresh cada 2 minutos
+setInterval(()=>{ if(!modalActivo) cargarDatos(); }, 120000);
+</script>
+</body>
+</html>
