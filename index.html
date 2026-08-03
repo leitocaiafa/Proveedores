@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gestión de Proveedores</title>
+<script>
+const SCRIPT_URL = 'TU_APPS_SCRIPT_URL_AQUI';
+const EMPRESA    = 'Gestión de Proveedores';
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--nav:#1F3864;--blu:#2E75B6;--bg:#f5f6fa;--card:#fff;--brd:#e5e7eb;--txt:#111827;--sub:#6b7280;--mut:#9ca3af}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;min-height:100vh}
+.hdr{background:var(--nav);color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.hdr-title{font-size:16px;font-weight:700}.hdr-sub{font-size:11px;color:#93b4d4;margin-top:1px}
+.hdr-btns{display:flex;gap:6px;flex-shrink:0}
+.nav{display:flex;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+.nb{background:transparent;border:none;border-bottom:2px solid transparent;color:#93b4d4;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .15s}
+.nb:hover{color:#fff}.nb.on{background:#fff;color:var(--nav);border-bottom-color:var(--nav)}
+.btn{cursor:pointer;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;transition:opacity .15s}.btn:hover{opacity:.85}
+.btn-w{background:#fff;color:var(--nav)}.btn-g{background:#22c55e;color:#fff}.btn-nav{background:var(--nav);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--brd);color:var(--sub);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-pay{background:#dcfce7;color:#15803d;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:600}
+.btn-edit{background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:600}
+main{padding:14px;max-width:980px;margin:0 auto}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:14px;margin-bottom:12px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:14px}
+.slbl{font-size:11px;color:var(--sub);margin-bottom:4px}.sval{font-size:22px;font-weight:700}.ssub{font-size:11px;color:var(--mut);margin-top:2px}
+.c-red{color:#dc2626}.c-amb{color:#d97706}.c-grn{color:#16a34a}
+.tbl-w{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px}
+th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--sub);border-bottom:1px solid var(--brd);background:#f9fafb;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--brd);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
+.empty{text-align:center;padding:28px;color:var(--mut);font-size:13px}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
+.b-pend{background:#fef3c7;color:#92400e}.b-paid{background:#dcfce7;color:#15803d}
+.b-part{background:#dbeafe;color:#1d4ed8}.b-over{background:#fee2e2;color:#991b1b}
+.b-void{background:#f3f4f6;color:#6b7280}.b-act{background:#dcfce7;color:#15803d}.b-ina{background:#f3f4f6;color:#6b7280}
+.filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.fi{flex:1;min-width:140px}.fs{min-width:150px}
+input,select{border:1px solid var(--brd);border-radius:8px;padding:8px 11px;font-size:13px;width:100%;background:#fff;color:var(--txt);outline:none;font-family:inherit}
+input:focus,select:focus{border-color:#2E75B6;box-shadow:0 0 0 2px #dbeafe}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.fg label{font-size:11px;font-weight:600;color:var(--sub)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fcol2{grid-column:1/-1}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:500;padding:16px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.mhdr{background:var(--nav);color:#fff;padding:14px 16px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center}
+.mhdr h3{font-size:15px;font-weight:600}
+.mbody{padding:16px}.mfoot{padding:12px 16px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end;gap:8px}
+.xbtn{background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+.det-hdr{background:var(--nav);color:#fff;border-radius:12px;padding:16px;margin-bottom:12px}
+.dname{font-size:18px;font-weight:700;margin:4px 0}.dmeta{font-size:11px;color:#93b4d4}
+.dbal{font-size:28px;font-weight:700;margin:6px 0 4px}
+.dinfo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.dinfo-i{font-size:12px;color:#93b4d4}.dinfo-i strong{display:block;color:#fff;margin-bottom:1px}
+.backbtn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;margin-bottom:10px;display:inline-block}
+.abar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-top:8px}
+.aseg{height:100%;border-radius:2px}
+.dtabs{display:flex;border-bottom:1px solid var(--brd);margin-bottom:12px}
+.dtab{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--sub);margin-bottom:-1px}
+.dtab.on{color:var(--nav);border-bottom-color:var(--nav)}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--sub)}
+.spinner{width:36px;height:36px;border:3px solid #dbeafe;border-top-color:#2E75B6;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-box{background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:14px;color:#991b1b;font-size:13px;margin-bottom:12px}
+.sbar{position:fixed;bottom:16px;right:16px;background:var(--nav);color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.sbar.show{opacity:1}
+.sdot{width:8px;height:8px;border-radius:50%}.sdot-g{background:#4ade80}
+.sdot-s{border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.amt-d{color:#dc2626;font-weight:600}.amt-c{color:#16a34a;font-weight:600}
+.lnk{color:var(--nav);cursor:pointer;font-weight:500}.lnk:hover{text-decoration:underline}
+.td-a{display:flex;gap:4px;flex-wrap:wrap}
+.edit-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 10px;font-size:11px;color:#1d4ed8;margin-bottom:12px}
+@media(max-width:600px){.g4{grid-template-columns:1fr 1fr}.fgrid{grid-template-columns:1fr}.dinfo{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-top">
+    <div><div class="hdr-title" id="titulo"></div><div class="hdr-sub">Control de Pagos · Cuenta Corriente · Saldos</div></div>
+    <div class="hdr-btns">
+      <button class="btn btn-w" onclick="abrirModal('movimiento')">+ Movimiento</button>
+      <button class="btn btn-g" onclick="abrirModal('pago')">+ Pago</button>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nb on" onclick="irTab('dashboard',this)">&#128202; Dashboard</button>
+    <button class="nb" onclick="irTab('proveedores',this)">&#127970; Proveedores</button>
+    <button class="nb" onclick="irTab('movimientos',this)">&#128196; Movimientos</button>
+    <button class="nb" onclick="irTab('pagos',this)">&#128179; Pagos</button>
+  </nav>
+</div>
+<div class="sbar" id="sbar"><div class="sdot sdot-s" id="sdot"></div><span id="smsg">Guardando...</span></div>
+<main id="main"></main>
+<div class="overlay" id="overlay" style="display:none" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhdr"><h3 id="mtitle"></h3><button class="xbtn" onclick="cerrarModal()">&#215;</button></div>
+    <div class="mbody" id="mbody"></div>
+    <div class="mfoot" id="mfoot"></div>
+  </div>
+</div>
+
+<script>
+let S=[],M=[],P=[];
+let tab='dashboard',detId=null,modalTipo=null,editando=null;
+let busq='',fStatus='',fSupp='';
+
+const el=id=>document.getElementById(id);
+const fmt$=n=>'$ '+Math.round(n||0).toLocaleString('es-AR');
+const fmtD=s=>s?new Date(s+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+const hoy=()=>new Date().toISOString().split('T')[0];
+const dP=(d,n)=>{const r=new Date((d||hoy())+'T12:00:00');r.setDate(r.getDate()+n);return r.toISOString().split('T')[0];};
+const uid=p=>p+Date.now().toString(36).slice(-6).toUpperCase();
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const gv=id=>(el(id)?.value||'').trim();
+const gvn=id=>parseFloat(el(id)?.value)||0;
+
+const getBalance=sid=>{
+  const d=M.filter(m=>m.sid===sid).reduce((a,m)=>a+(+m.debit||0),0);
+  const c=M.filter(m=>m.sid===sid).reduce((a,m)=>a+(+m.credit||0),0);
+  const p=P.filter(p=>p.sid===sid).reduce((a,p)=>a+(+p.amount||0),0);
+  return d-c-p;
+};
+const effSt=m=>m.status==='Pendiente'&&m.due&&m.due<hoy()?'Vencido':m.status;
+const sName=sid=>{const s=S.find(x=>x.id===sid);return s?s.name:sid;};
+const bCls=st=>({Pendiente:'b-pend',Pagado:'b-paid','Pagado Parcial':'b-part',Vencido:'b-over',Anulado:'b-void'}[st]||'b-void');
+
+function aging(sid){
+  let curr=0,d30=0,d60=0,d90p=0;
+  M.filter(m=>m.sid===sid&&m.status==='Pendiente'&&+m.debit>0).forEach(m=>{
+    const dias=m.due?Math.floor((new Date(hoy())-new Date(m.due+'T12:00:00'))/86400000):0;
+    if(dias<=0)curr+=+m.debit;else if(dias<=30)d30+=+m.debit;else if(dias<=60)d60+=+m.debit;else d90p+=+m.debit;
+  });
+  return{curr,d30,d60,d90p};
+}
+
+async function apiGet(p={}){
+  const url=new URL(SCRIPT_URL);
+  Object.entries(p).forEach(([k,v])=>url.searchParams.set(k,v));
+  return(await fetch(url.toString(),{redirect:'follow'})).json();
+}
+async function apiPost(data){
+  return(await fetch(SCRIPT_URL,{method:'POST',redirect:'follow',body:JSON.stringify(data)})).json();
+}
+
+async function cargarDatos(){
+  el('main').innerHTML='<div class="loading"><div class="spinner"></div><span>Conectando...</span></div>';
+  try{
+    const d=await apiGet({action:'getData'});
+    if(d.error)throw new Error(d.error);
+    S=d.proveedores||[];M=d.movimientos||[];P=d.pagos||[];render();
+  }catch(err){
+    el('main').innerHTML=`<div style="padding:20px"><div class="err-box"><strong>No se pudo conectar</strong><br>Verificá que SCRIPT_URL este configurado.<br><small>${esc(err.message)}</small></div></div>`;
+  }
+}
+
+async function apiOp(action,hoja,fila,id,cambios){
+  sync('Guardando...');
+  try{
+    let r;
+    if(action==='agregar')r=await apiPost({action:'agregar',hoja,fila});
+    if(action==='actualizar')r=await apiPost({action:'actualizar',hoja,id,cambios});
+    if(r&&r.error)throw new Error(r.error);
+    sync('Guardado correctamente',true);
+    setTimeout(()=>el('sbar').classList.remove('show'),2000);
+  }catch(err){
+    sync('Error: '+err.message,false,true);
+    setTimeout(()=>el('sbar').classList.remove('show'),3500);
+  }
+}
+
+function sync(msg,ok=false,err=false){
+  el('smsg').textContent=msg;
+  el('sdot').className=ok?'sdot sdot-g':err?'sdot':'sdot sdot-s';
+  if(err)el('sdot').style.background='#f87171';
+  el('sbar').classList.add('show');
+}
+
+function irTab(t,btn){
+  tab=t;detId=null;busq='';fStatus='';fSupp='';
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');render();
+}
+function verDetalle(sid){detId=sid;tab='proveedores';render();}
+
+function render(){
+  const m=el('main');
+  if(tab==='dashboard')m.innerHTML=rDash();
+  else if(tab==='proveedores'&&detId)m.innerHTML=rDetalle(detId);
+  else if(tab==='proveedores')m.innerHTML=rProvs();
+  else if(tab==='movimientos')m.innerHTML=rMovs();
+  else if(tab==='pagos')m.innerHTML=rPags();
+}
+
+function rDash(){
+  let total=0,vencT=0,proxT=0,pagMes=0;
+  const h=hoy(),in30=dP(h,30),mIni=h.slice(0,8)+'01';
+  S.forEach(s=>{const b=getBalance(s.id);if(b>0)total+=b;});
+  M.forEach(m=>{if(m.status==='Pendiente'&&+m.debit>0){if(m.due&&m.due<h)vencT+=+m.debit;else if(m.due&&m.due<=in30)proxT+=+m.debit;}});
+  P.forEach(p=>{if(p.date>=mIni)pagMes+=+p.amount;});
+  const vRows=M.filter(m=>effSt(m)==='Vencido');
+  const pRows=M.filter(m=>m.status==='Pendiente'&&m.due&&m.due>=h&&m.due<=in30&&+m.debit>0).sort((a,b)=>a.due.localeCompare(b.due)).slice(0,8);
+  const sRows=S.filter(s=>s.active&&getBalance(s.id)>0).map(s=>{
+    const b=getBalance(s.id),ag=aging(s.id);
+    return`<tr><td><span class="lnk" onclick="verDetalle('${s.id}')">${esc(s.name)}</span></td><td class="amt-d">${fmt$(b)}</td><td style="color:#16a34a">${ag.curr>0?fmt$(ag.curr):'—'}</td><td style="color:#d97706">${ag.d30>0?fmt$(ag.d30):'—'}</td><td style="color:#dc2626">${ag.d60+ag.d90p>0?fmt$(ag.d60+ag.d90p):'—'}</td></tr>`;
+  }).join('');
+  return`<div class="g4">
+    <div class="stat"><div class="slbl">Deuda total</div><div class="sval c-red">${fmt$(total)}</div></div>
+    <div class="stat"><div class="slbl">Vencido</div><div class="sval c-red">${fmt$(vencT)}</div><div class="ssub">${vRows.length} comprobante(s)</div></div>
+    <div class="stat"><div class="slbl">Vence proximos 30 dias</div><div class="sval c-amb">${fmt$(proxT)}</div></div>
+    <div class="stat"><div class="slbl">Pagado este mes</div><div class="sval c-grn">${fmt$(pagMes)}</div></div>
+  </div>
+  ${sRows?`<div class="card"><div class="card-hdr">Saldos por proveedor</div><div class="tbl-w"><table><thead><tr><th>Proveedor</th><th>Saldo total</th><th>Corriente</th><th>Vencido 1-30d</th><th>Vencido +30d</th></tr></thead><tbody>${sRows}</tbody></table></div></div>`:''}
+  ${vRows.length?`<div class="card"><div class="card-hdr" style="color:#dc2626">Facturas vencidas</div><div class="tbl-w"><table><thead><tr><th>Vencimiento</th><th>Proveedor</th><th>Comprobante</th><th>Monto</th><th></th></tr></thead><tbody>${vRows.map(m=>`<tr><td>${fmtD(m.due)}</td><td><span class="lnk" onclick="verDetalle('${m.sid}')">${esc(sName(m.sid))}</span></td><td>${esc(m.type+' '+m.num)}</td><td class="amt-d">${fmt$(m.debit)}</td><td><button class="btn-pay" onclick="pagoRapido('${m.id}')">Pagar</button></td></tr>`).join('')}</tbody></table></div></div>`:''}
+  ${pRows.length?`<div class="card"><div class="card-hdr">Proximos vencimientos</div><div class="tbl-w"><table><thead><tr><th>Vencimiento</th><th>Proveedor</th><th>Comprobante</th><th>Monto</th></tr></thead><tbody>${pRows.map(m=>{const d=Math.floor((new Date(m.due+'T12:00:00')-new Date(hoy()+'T12:00:00'))/86400000);return`<tr><td>${fmtD(m.due)} <span style="color:#d97706;font-size:11px">(en ${d}d)</span></td><td><span class="lnk" onclick="verDetalle('${m.sid}')">${esc(sName(m.sid))}</span></td><td>${esc(m.type+' '+m.num)}</td><td class="amt-d">${fmt$(m.debit)}</td></tr>`;}).join('')}</tbody></table></div></div>`:''}`;
+}
+
+function rProvs(){
+  const lista=S.filter(s=>!busq||s.name.toLowerCase().includes(busq.toLowerCase())||s.id.includes(busq)||String(s.cuit).includes(busq));
+  const rows=lista.map(s=>{const b=getBalance(s.id);return`<tr>
+    <td><strong>${esc(s.id)}</strong></td>
+    <td><span class="lnk" onclick="verDetalle('${s.id}')">${esc(s.name)}</span><div style="font-size:11px;color:var(--mut)">${esc(s.cuit)}</div></td>
+    <td>${esc(s.cat)}</td><td>${s.payDays===0?'Contado':s.payDays+'d'}</td>
+    <td>${b>0?`<span class="amt-d">${fmt$(b)}</span>`:`<span class="amt-c">Al dia</span>`}</td>
+    <td><span class="badge ${s.active?'b-act':'b-ina'}">${s.active?'Activo':'Inactivo'}</span></td>
+    <td><div class="td-a"><button class="btn-pay" onclick="verDetalle('${s.id}')">Ver</button><button class="btn-edit" onclick="editarProveedor('${s.id}')">Editar</button></div></td>
+  </tr>`;}).join('');
+  return`<div class="filters">
+    <input class="fi" type="text" placeholder="Buscar nombre, ID o CUIT..." value="${esc(busq)}" oninput="busq=this.value;render()"/>
+    <button class="btn btn-nav btn-sm" onclick="abrirModal('proveedor')">+ Nuevo proveedor</button>
+    <button class="btn-ghost btn-sm" onclick="exportCSV('proveedores')">Exportar CSV</button>
+  </div>
+  <div class="card"><div class="tbl-w"><table>
+    <thead><tr><th>ID</th><th>Razon Social</th><th>Rubro</th><th>Cond. Pago</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="7" class="empty">Sin resultados</td></tr>'}</tbody>
+  </table></div></div>`;
+}
+
+function rDetalle(sid){
+  const s=S.find(x=>x.id===sid);if(!s)return'';
+  const b=getBalance(sid),ag=aging(sid),tot=ag.curr+ag.d30+ag.d60+ag.d90p||1;
+  const w=v=>Math.max(1,Math.round(v/tot*100));
+  const smovs=M.filter(m=>m.sid===sid).sort((a,c)=>c.date.localeCompare(a.date));
+  const spays=P.filter(p=>p.sid===sid).sort((a,c)=>c.date.localeCompare(a.date));
+  const mRows=smovs.map(m=>{const es=effSt(m);return`<tr>
+    <td>${fmtD(m.date)}</td><td>${fmtD(m.due)}</td>
+    <td><strong>${esc(m.type)}</strong><br><span style="font-size:10px;color:var(--mut)">${esc(m.num)}</span></td>
+    <td>${esc(m.desc)}</td>
+    <td>${+m.debit?`<span class="amt-d">${fmt$(m.debit)}</span>`:'—'}</td>
+    <td>${+m.credit?`<span class="amt-c">${fmt$(m.credit)}</span>`:'—'}</td>
+    <td><span class="badge ${bCls(es)}">${es}</span></td>
+    <td><div class="td-a">${m.status==='Pendiente'||m.status==='Pagado Parcial'?`<button class="btn-pay" onclick="pagoRapido('${m.id}')">Pagar</button>`:''}<button class="btn-edit" onclick="editarMovimiento('${m.id}')">Editar</button></div></td>
+  </tr>`;}).join('');
+  const pRows=spays.map(p=>`<tr>
+    <td>${fmtD(p.date)}</td><td><span class="badge b-paid">${esc(p.method)}</span></td>
+    <td>${esc(p.ref)||'—'}</td><td>${esc(p.bank)||'—'}</td>
+    <td class="amt-c"><strong>${fmt$(p.amount)}</strong></td>
+    <td style="font-size:11px">${esc(p.relDoc)||'—'}</td>
+    <td><button class="btn-edit" onclick="editarPago('${p.id}')">Editar</button></td>
+  </tr>`).join('');
+  return`<button class="backbtn" onclick="detId=null;render()">Volver</button>
+  <div class="det-hdr">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="dmeta">${esc(s.id)} · ${esc(s.cat)} · ${s.payDays===0?'Pago al contado':s.payDays+' dias'}</div>
+        <div class="dname">${esc(s.name)}</div>
+        <div class="dmeta">CUIT: ${esc(s.cuit)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#93b4d4">Saldo pendiente</div>
+        <div class="dbal" style="${b>0?'color:#fca5a5':'color:#86efac'}">${fmt$(b)}</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-g btn-sm" onclick="abrirModal('pago','${sid}')">+ Pago</button>
+          <button class="btn btn-w btn-sm" onclick="editarProveedor('${sid}')">Editar datos</button>
+        </div>
+      </div>
+    </div>
+    <div class="dinfo">
+      <div class="dinfo-i"><strong>${esc(s.contact||'—')}</strong>Contacto</div>
+      <div class="dinfo-i"><strong>${esc(s.phone||'—')}</strong>Telefono</div>
+      <div class="dinfo-i"><strong>${esc(s.email||'—')}</strong>E-mail</div>
+    </div>
+    ${b>0?`<div class="abar">${ag.curr>0?`<div class="aseg" style="width:${w(ag.curr)}%;background:#4ade80"></div>`:''} ${ag.d30>0?`<div class="aseg" style="width:${w(ag.d30)}%;background:#fbbf24"></div>`:''} ${ag.d60>0?`<div class="aseg" style="width:${w(ag.d60)}%;background:#f97316"></div>`:''} ${ag.d90p>0?`<div class="aseg" style="width:${w(ag.d90p)}%;background:#ef4444"></div>`:''}</div>
+    <div style="display:flex;gap:12px;font-size:11px;margin-top:5px;flex-wrap:wrap">${ag.curr>0?`<span style="color:#4ade80">Corriente ${fmt$(ag.curr)}</span>`:''}${ag.d30>0?`<span style="color:#fbbf24">1-30d ${fmt$(ag.d30)}</span>`:''}${ag.d60>0?`<span style="color:#f97316">31-60d ${fmt$(ag.d60)}</span>`:''}${ag.d90p>0?`<span style="color:#ef4444">+60d ${fmt$(ag.d90p)}</span>`:''}</div>`:``}
+  </div>
+  <div class="dtabs">
+    <button class="dtab on" id="dt-m" onclick="switchDtab('m')">Movimientos (${smovs.length})</button>
+    <button class="dtab" id="dt-p" onclick="switchDtab('p')">Pagos (${spays.length})</button>
+  </div>
+  <div class="card" id="dp-m">
+    <div class="card-hdr">Movimientos<button class="btn btn-nav btn-sm" onclick="abrirModal('movimiento','${sid}')">+ Nuevo</button></div>
+    <div class="tbl-w"><table><thead><tr><th>Fecha</th><th>Vcto.</th><th>Comprobante</th><th>Descripcion</th><th>Debe</th><th>Haber</th><th>Estado</th><th></th></tr></thead><tbody>${mRows||'<tr><td colspan="8" class="empty">Sin movimientos</td></tr>'}</tbody></table></div>
+  </div>
+  <div class="card" id="dp-p" style="display:none">
+    <div class="card-hdr">Pagos registrados</div>
+    <div class="tbl-w"><table><thead><tr><th>Fecha</th><th>Forma</th><th>Ref.</th><th>Banco</th><th>Monto</th><th>Comprobante</th><th></th></tr></thead><tbody>${pRows||'<tr><td colspan="7" class="empty">Sin pagos</td></tr>'}</tbody></table></div>
+  </div>`;
+}
+function switchDtab(t){['m','p'].forEach(x=>{el('dt-'+x)?.classList.toggle('on',x===t);const d=el('dp-'+x);if(d)d.style.display=x===t?'':'none';});}
+
+function rMovs(){
+  let rows=M.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(busq)rows=rows.filter(m=>m.num.includes(busq)||m.desc.toLowerCase().includes(busq.toLowerCase())||sName(m.sid).toLowerCase().includes(busq.toLowerCase()));
+  if(fStatus)rows=rows.filter(m=>effSt(m)===fStatus);
+  if(fSupp)rows=rows.filter(m=>m.sid===fSupp);
+  const sOpts=S.map(s=>`<option value="${s.id}" ${fSupp===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const trs=rows.map(m=>{const es=effSt(m);return`<tr>
+    <td style="font-size:11px;color:var(--mut)">${m.id}</td>
+    <td>${fmtD(m.date)}</td><td>${fmtD(m.due)}</td>
+    <td><span class="lnk" onclick="verDetalle('${m.sid}')">${esc(sName(m.sid))}</span></td>
+    <td><strong>${esc(m.type)}</strong></td><td style="font-size:11px">${esc(m.num)}</td>
+    <td>${esc(m.desc)}</td>
+    <td>${+m.debit?`<span class="amt-d">${fmt$(m.debit)}</span>`:'—'}</td>
+    <td>${+m.credit?`<span class="amt-c">${fmt$(m.credit)}</span>`:'—'}</td>
+    <td><span class="badge ${bCls(es)}">${es}</span></td>
+    <td><div class="td-a">${m.status==='Pendiente'||m.status==='Pagado Parcial'?`<button class="btn-pay" onclick="pagoRapido('${m.id}')">Pagar</button>`:''}<button class="btn-edit" onclick="editarMovimiento('${m.id}')">Editar</button></div></td>
+  </tr>`;}).join('');
+  return`<div class="filters">
+    <input class="fi" type="text" placeholder="Buscar..." value="${esc(busq)}" oninput="busq=this.value;render()"/>
+    <select class="fs" onchange="fStatus=this.value;render()"><option value="">Todos los estados</option><option value="Pendiente" ${fStatus==='Pendiente'?'selected':''}>Pendiente</option><option value="Vencido" ${fStatus==='Vencido'?'selected':''}>Vencido</option><option value="Pagado Parcial" ${fStatus==='Pagado Parcial'?'selected':''}>Pagado Parcial</option><option value="Pagado" ${fStatus==='Pagado'?'selected':''}>Pagado</option></select>
+    <select class="fs" onchange="fSupp=this.value;render()"><option value="">Todos los proveedores</option>${sOpts}</select>
+    <button class="btn-ghost btn-sm" onclick="exportCSV('movimientos')">Exportar CSV</button>
+  </div>
+  <div class="card"><div class="tbl-w"><table>
+    <thead><tr><th>ID</th><th>Fecha</th><th>Vcto.</th><th>Proveedor</th><th>Tipo</th><th>Comprobante</th><th>Descripcion</th><th>Debe</th><th>Haber</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${trs||'<tr><td colspan="11" class="empty">Sin resultados</td></tr>'}</tbody>
+  </table></div></div>`;
+}
+
+function rPags(){
+  let rows=P.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(busq)rows=rows.filter(p=>p.ref.includes(busq)||sName(p.sid).toLowerCase().includes(busq.toLowerCase())||(p.relDoc||'').toLowerCase().includes(busq.toLowerCase()));
+  if(fSupp)rows=rows.filter(p=>p.sid===fSupp);
+  const sOpts=S.map(s=>`<option value="${s.id}" ${fSupp===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const total=rows.reduce((a,p)=>a+(+p.amount||0),0);
+  const trs=rows.map(p=>`<tr>
+    <td style="font-size:11px;color:var(--mut)">${p.id}</td><td>${fmtD(p.date)}</td>
+    <td><span class="lnk" onclick="verDetalle('${p.sid}')">${esc(sName(p.sid))}</span></td>
+    <td><span class="badge b-paid">${esc(p.method)}</span></td>
+    <td>${esc(p.ref)||'—'}</td><td>${esc(p.bank)||'—'}</td>
+    <td class="amt-c"><strong>${fmt$(p.amount)}</strong></td>
+    <td style="font-size:11px">${esc(p.relDoc)||'—'}</td>
+    <td><button class="btn-edit" onclick="editarPago('${p.id}')">Editar</button></td>
+  </tr>`).join('');
+  return`<div class="filters">
+    <input class="fi" type="text" placeholder="Buscar..." value="${esc(busq)}" oninput="busq=this.value;render()"/>
+    <select class="fs" onchange="fSupp=this.value;render()"><option value="">Todos los proveedores</option>${sOpts}</select>
+    <button class="btn-ghost btn-sm" onclick="exportCSV('pagos')">Exportar CSV</button>
+  </div>
+  <div class="stat" style="display:inline-flex;align-items:center;gap:12px;padding:10px 16px;margin-bottom:12px">
+    <span style="font-size:12px;color:var(--sub)">Total pagado (filtro):</span><span class="amt-c" style="font-size:18px;font-weight:700">${fmt$(total)}</span>
+  </div>
+  <div class="card"><div class="tbl-w"><table>
+    <thead><tr><th>ID</th><th>Fecha</th><th>Proveedor</th><th>Forma</th><th>Referencia</th><th>Banco</th><th>Monto</th><th>Comprobante</th><th></th></tr></thead>
+    <tbody>${trs||'<tr><td colspan="9" class="empty">Sin resultados</td></tr>'}</tbody>
+  </table></div></div>`;
+}
+
+const sOpts2=(presetSid='')=>'<option value="">Selecciona</option>'+S.filter(s=>s.active).map(s=>`<option value="${s.id}" ${presetSid===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+const selOpts=(vals,cur)=>vals.map(v=>`<option ${cur===v?'selected':''}>${v}</option>`).join('');
+
+function abrirModal(tipo,presetSid='',datos=null){
+  modalTipo=tipo;editando=datos?{tipo,id:datos.id}:null;
+  const mt=el('mtitle'),mb=el('mbody'),mf=el('mfoot');
+  const esEdit=!!datos;
+  const note=esEdit?'<div class="edit-note">Modo edicion: modifica los campos necesarios y guarda.</div>':'';
+
+  if(tipo==='movimiento'){
+    const d=datos||{};
+    mt.textContent=esEdit?'Editar movimiento':'Nuevo movimiento';
+    mb.innerHTML=note+`<div class="fgrid">
+      <div class="fg"><label>Proveedor *</label><select id="f-sid" onchange="actuVto()">${sOpts2(d.sid||presetSid)}</select></div>
+      <div class="fg"><label>Fecha *</label><input type="date" id="f-date" value="${d.date||hoy()}" onchange="actuVto()"/></div>
+      <div class="fg"><label>Tipo comprobante</label><select id="f-type">${selOpts(['FC-A','FC-B','FC-C','NC-A','NC-B','NC-C','ND-A','ND-B','ND-C','Recibo'],d.type||'FC-A')}</select></div>
+      <div class="fg"><label>N comprobante</label><input type="text" id="f-num" value="${esc(d.num||'')}" placeholder="0001-00000000"/></div>
+      <div class="fg fcol2"><label>Descripcion</label><input type="text" id="f-desc" value="${esc(d.desc||'')}" placeholder="Descripcion..."/></div>
+      <div class="fg"><label>Debe / Factura ($)</label><input type="number" id="f-debit" value="${d.debit||''}" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Haber / Nota de Credito ($)</label><input type="number" id="f-credit" value="${d.credit||''}" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Vencimiento</label><input type="date" id="f-due" value="${d.due||''}"/></div>
+      <div class="fg"><label>Estado</label><select id="f-status">${selOpts(['Pendiente','Pagado','Pagado Parcial','Anulado'],d.status||'Pendiente')}</select></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" value="${esc(d.notes||'')}" placeholder="Observaciones..."/></div>
+    </div>`;
+    if(!esEdit&&(d.sid||presetSid))setTimeout(actuVto,50);
+    mf.innerHTML=`<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-nav" onclick="guardarMovimiento()">${esEdit?'Actualizar':'Guardar'}</button>`;
+  }
+  else if(tipo==='pago'){
+    const d=datos||{};
+    mt.textContent=esEdit?'Editar pago':'Registrar pago';
+    mb.innerHTML=note+`<div class="fgrid">
+      <div class="fg"><label>Proveedor *</label><select id="f-sid">${sOpts2(d.sid||presetSid)}</select></div>
+      <div class="fg"><label>Fecha *</label><input type="date" id="f-date" value="${d.date||hoy()}"/></div>
+      <div class="fg"><label>Monto ($) *</label><input type="number" id="f-amount" value="${d.amount||''}" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Forma de pago</label><select id="f-method">${selOpts(['Transferencia','Efectivo','Cheque','Cheque Diferido','Debito','Credito','Otro'],d.method||'Transferencia')}</select></div>
+      <div class="fg"><label>N referencia / cheque</label><input type="text" id="f-ref" value="${esc(d.ref||'')}" placeholder="TRF-0001..."/></div>
+      <div class="fg"><label>Banco / Entidad</label><input type="text" id="f-bank" value="${esc(d.bank||'')}" placeholder="Banco..."/></div>
+      <div class="fg fcol2"><label>Comprobante relacionado</label><input type="text" id="f-reldoc" value="${esc(d.relDoc||'')}" placeholder="FC-A 0001-00000000..."/></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" value="${esc(d.notes||'')}" placeholder="Observaciones..."/></div>
+    </div>`;
+    mf.innerHTML=`<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-g" onclick="guardarPago()">${esEdit?'Actualizar':'Guardar pago'}</button>`;
+  }
+  else if(tipo==='proveedor'){
+    const d=datos||{};
+    const nxtId=datos?d.id:'P'+String((S.length?Math.max(...S.map(s=>parseInt(s.id.slice(1))||0)):0)+1).padStart(3,'0');
+    mt.textContent=esEdit?'Editar proveedor':'Nuevo proveedor';
+    mb.innerHTML=note+`<div class="fgrid">
+      <div class="fg"><label>ID</label><input type="text" id="f-id" value="${nxtId}" readonly style="background:#f9fafb;color:var(--mut)"/></div>
+      <div class="fg"><label>Razon Social *</label><input type="text" id="f-name" value="${esc(d.name||'')}" placeholder="Nombre o razon social..."/></div>
+      <div class="fg"><label>CUIT / DNI</label><input type="text" id="f-cuit" value="${esc(d.cuit||'')}" placeholder="30-00000000-0"/></div>
+      <div class="fg"><label>Contacto</label><input type="text" id="f-contact" value="${esc(d.contact||'')}" placeholder="Nombre contacto..."/></div>
+      <div class="fg"><label>Telefono</label><input type="text" id="f-phone" value="${esc(d.phone||'')}" placeholder="011-0000-0000"/></div>
+      <div class="fg"><label>E-mail</label><input type="text" id="f-email" value="${esc(d.email||'')}" placeholder="mail@proveedor.com"/></div>
+      <div class="fg"><label>Condicion de pago (dias)</label><input type="number" id="f-paydays" value="${d.payDays!==undefined?d.payDays:30}" min="0"/></div>
+      <div class="fg"><label>Rubro / Categoria</label><select id="f-cat">${selOpts(['Insumos','Materiales','Servicios','Papeleria','Alimentos','Logistica','Importados','Limpieza','Mantenimiento','Otros'],d.cat||'Insumos')}</select></div>
+      <div class="fg"><label>Estado</label><select id="f-active"><option value="true" ${d.active!==false?'selected':''}>Activo</option><option value="false" ${d.active===false?'selected':''}>Inactivo</option></select></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" value="${esc(d.notes||'')}" placeholder="Observaciones..."/></div>
+    </div>`;
+    mf.innerHTML=`<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-nav" onclick="guardarProveedor()">${esEdit?'Actualizar':'Guardar'}</button>`;
+  }
+  el('overlay').style.display='flex';
+  setTimeout(()=>{const fi=el('mbody').querySelector('input:not([readonly]),select');if(fi)fi.focus();},100);
+}
+
+function editarProveedor(id){const d=S.find(x=>x.id===id);if(d)abrirModal('proveedor','',d);}
+function editarMovimiento(id){const d=M.find(x=>x.id===id);if(d)abrirModal('movimiento',d.sid,d);}
+function editarPago(id){const d=P.find(x=>x.id===id);if(d)abrirModal('pago',d.sid,d);}
+
+function cerrarModal(e){if(e&&e.target!==el('overlay'))return;el('overlay').style.display='none';modalTipo=null;editando=null;}
+function actuVto(){const sid=gv('f-sid'),date=gv('f-date'),s=S.find(x=>x.id===sid),fd=el('f-due');if(s&&date&&fd&&!editando)fd.value=dP(date,s.payDays||0);}
+
+async function guardarMovimiento(){
+  const sid=gv('f-sid');if(!sid){alert('Selecciona un proveedor');return;}
+  const fila={sid,date:gv('f-date')||hoy(),due:gv('f-due'),type:gv('f-type')||'FC-A',num:gv('f-num'),desc:gv('f-desc'),debit:gvn('f-debit'),credit:gvn('f-credit'),status:gv('f-status')||'Pendiente',notes:gv('f-notes')};
+  el('overlay').style.display='none';
+  if(editando){const idx=M.findIndex(m=>m.id===editando.id);if(idx>=0)M[idx]={...M[idx],...fila};render();await apiOp('actualizar','movimientos',null,editando.id,fila);}
+  else{fila.id=uid('M');M.push(fila);render();await apiOp('agregar','movimientos',fila);}
+  editando=null;
+}
+
+async function guardarPago(){
+  const sid=gv('f-sid');if(!sid){alert('Selecciona un proveedor');return;}
+  const amount=gvn('f-amount');if(!amount){alert('Ingresa un monto');return;}
+  const fila={sid,date:gv('f-date')||hoy(),method:gv('f-method')||'Transferencia',ref:gv('f-ref'),bank:gv('f-bank'),amount,relDoc:gv('f-reldoc'),notes:gv('f-notes')};
+  el('overlay').style.display='none';
+  if(editando){const idx=P.findIndex(p=>p.id===editando.id);if(idx>=0)P[idx]={...P[idx],...fila};render();await apiOp('actualizar','pagos',null,editando.id,fila);}
+  else{fila.id=uid('PAG');P.push(fila);render();await apiOp('agregar','pagos',fila);}
+  editando=null;
+}
+
+async function guardarProveedor(){
+  const name=gv('f-name');if(!name){alert('Ingresa la razon social');return;}
+  const fila={name,cuit:gv('f-cuit'),contact:gv('f-contact'),phone:gv('f-phone'),email:gv('f-email'),payDays:parseInt(el('f-paydays')?.value)||0,cat:gv('f-cat')||'Otros',active:el('f-active')?.value!=='false',notes:gv('f-notes')};
+  el('overlay').style.display='none';
+  if(editando){const idx=S.findIndex(s=>s.id===editando.id);if(idx>=0)S[idx]={...S[idx],...fila};render();await apiOp('actualizar','proveedores',null,editando.id,fila);}
+  else{const nxtId='P'+String((S.length?Math.max(...S.map(s=>parseInt(s.id.slice(1))||0)):0)+1).padStart(3,'0');fila.id=nxtId;S.push(fila);render();await apiOp('agregar','proveedores',fila);}
+  editando=null;
+}
+
+function pagoRapido(mid){const m=M.find(x=>x.id===mid);if(!m)return;abrirModal('pago',m.sid);setTimeout(()=>{const fd=el('f-reldoc');if(fd)fd.value=m.type+' '+m.num;},80);}
+
+function exportCSV(tipo){
+  let headers,rows,nombre;
+  if(tipo==='movimientos'){headers=['ID','Fecha','Vencimiento','Proveedor','Tipo','Comprobante','Descripcion','Debe','Haber','Estado','Notas'];rows=M.map(m=>[m.id,m.date,m.due,sName(m.sid),m.type,m.num,m.desc,m.debit,m.credit,m.status,m.notes]);nombre='movimientos';}
+  else if(tipo==='pagos'){headers=['ID','Fecha','Proveedor','Forma','Referencia','Banco','Monto','Comprobante','Notas'];rows=P.map(p=>[p.id,p.date,sName(p.sid),p.method,p.ref,p.bank,p.amount,p.relDoc,p.notes]);nombre='pagos';}
+  else{headers=['ID','Razon Social','CUIT','Telefono','Email','Contacto','Dias Pago','Rubro','Activo','Notas','Saldo'];rows=S.map(s=>[s.id,s.name,s.cuit,s.phone,s.email,s.contact,s.payDays,s.cat,s.active,s.notes,getBalance(s.id)]);nombre='proveedores';}
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));a.download=`${nombre}_${hoy()}.csv`;a.click();
+}
+
+el('titulo').textContent=EMPRESA;
+cargarDatos();
+setInterval(()=>{if(!modalTipo)cargarDatos();},120000);
+</script>
+</body>
+</html>
