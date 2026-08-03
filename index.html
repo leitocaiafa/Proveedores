@@ -48,6 +48,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 .btn-pay{background:#dcfce7;color:#15803d;border:none;border-radius:6px;
   padding:3px 9px;font-size:11px;cursor:pointer;font-weight:600}
 .btn-pay:hover{background:#bbf7d0}
+.btn-edit{background:#e0f2fe;color:#0369a1;border:none;border-radius:6px;
+  padding:3px 9px;font-size:11px;cursor:pointer;font-weight:600;margin-left:4px}
+.btn-edit:hover{background:#bae6fd}
 .btn-del{background:#fee2e2;color:#991b1b;border:none;border-radius:6px;
   padding:3px 9px;font-size:11px;cursor:pointer}
 
@@ -400,18 +403,21 @@ function rDashboard(){
 
 // ── PROVEEDORES ────────────────────────────────────────────────────────────
 function rProveedores(){
-  const lista=S.filter(s=>!busq||s.name.toLowerCase().includes(busq.toLowerCase())||s.id.includes(busq)||s.cuit.includes(busq));
+  const lista=S.filter(s=>!busq||s.name.toLowerCase().includes(busq.toLowerCase())||s.id.includes(busq)||(s.cuit&&s.cuit.includes(busq)));
   const rows=lista.map(s=>{
     const b=getBalance(s.id);
     return `<tr>
       <td><strong>${esc(s.id)}</strong></td>
       <td><span class="link" onclick="verDetalle('${s.id}')">${esc(s.name)}</span>
-        <div style="font-size:11px;color:var(--muted)">${esc(s.cuit)}</div></td>
+        <div style="font-size:11px;color:var(--muted)">${esc(s.cuit||'')}</div></td>
       <td>${esc(s.cat)}</td>
       <td>${s.payDays===0?'Contado':s.payDays+'d'}</td>
       <td>${b>0?`<span class="amt-bal-pos">${fmt$(b)}</span>`:`<span class="amt-bal-ok">Al día</span>`}</td>
       <td><span class="badge ${s.active?'b-act':'b-ina'}">${s.active?'Activo':'Inactivo'}</span></td>
-      <td><button class="btn-pay" onclick="verDetalle('${s.id}')">Ver detalle</button></td>
+      <td>
+        <button class="btn-pay" onclick="verDetalle('${s.id}')">Ver detalle</button>
+        <button class="btn-edit" onclick="abrirModal('editar_proveedor', '${s.id}')">✏️ Editar</button>
+      </td>
     </tr>`;
   }).join('');
   return `
@@ -422,7 +428,7 @@ function rProveedores(){
   </div>
   <div class="card">
     <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Razón Social</th><th>Rubro</th><th>Cond. Pago</th><th>Saldo</th><th>Estado</th><th></th></tr></thead>
+      <thead><tr><th>ID</th><th>Razón Social</th><th>Rubro</th><th>Cond. Pago</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead>
       <tbody>${rows||'<tr><td colspan="7" class="empty">Sin resultados</td></tr>'}</tbody>
     </table></div>
   </div>`;
@@ -467,11 +473,12 @@ function rDetalle(sid){
       <div>
         <div class="det-meta">${esc(s.id)} · ${esc(s.cat)} · ${s.payDays===0?'Pago al contado':s.payDays+' días'}</div>
         <div class="det-name">${esc(s.name)}</div>
-        <div class="det-meta">CUIT: ${esc(s.cuit)}</div>
+        <div class="det-meta">CUIT: ${esc(s.cuit||'—')}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:11px;color:#93b4d4">Saldo pendiente</div>
         <div class="det-balance" style="${b>0?'color:#fca5a5':'color:#86efac'}">${fmt$(b)}</div>
+        <button class="btn btn-w btn-sm" onclick="abrirModal('editar_proveedor','${sid}')">✏️ Editar Proveedor</button>
         <button class="btn btn-g btn-sm" onclick="abrirModal('pago','${sid}')">+ Registrar pago</button>
       </div>
     </div>
@@ -673,6 +680,33 @@ function abrirModal(tipo, presetSid=''){
     </div>`;
     mf.innerHTML='<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-nav" onclick="guardarProveedor()">Guardar proveedor</button>';
   }
+  else if(tipo==='editar_proveedor'){
+    const prov = S.find(x => x.id === presetSid);
+    if(!prov) return;
+    mt.textContent = 'Editar Proveedor (' + prov.id + ')';
+    mb.innerHTML = `
+    <div class="fgrid">
+      <input type="hidden" id="f-id" value="${prov.id}"/>
+      <div class="fg"><label>Razón Social *</label><input type="text" id="f-name" value="${esc(prov.name)}"/></div>
+      <div class="fg"><label>CUIT / DNI</label><input type="text" id="f-cuit" value="${esc(prov.cuit||'')}"/></div>
+      <div class="fg"><label>Contacto</label><input type="text" id="f-contact" value="${esc(prov.contact||'')}"/></div>
+      <div class="fg"><label>Teléfono</label><input type="text" id="f-phone" value="${esc(prov.phone||'')}"/></div>
+      <div class="fg"><label>E-mail</label><input type="text" id="f-email" value="${esc(prov.email||'')}"/></div>
+      <div class="fg"><label>Condición de pago (días) *</label><input type="number" id="f-paydays" value="${prov.payDays||0}" min="0"/></div>
+      <div class="fg"><label>Rubro / Categoría</label>
+        <select id="f-cat">
+          ${['Insumos','Materiales','Servicios','Papelería','Alimentos','Logística','Importados','Limpieza','Mantenimiento','Otros']
+            .map(c => `<option ${prov.cat===c?'selected':''}>${c}</option>`).join('')}
+        </select></div>
+      <div class="fg"><label>Estado</label>
+        <select id="f-active">
+          <option value="true" ${prov.active?'selected':''}>Activo</option>
+          <option value="false" ${!prov.active?'selected':''}>Inactivo</option>
+        </select></div>
+      <div class="fg fcol2"><label>Notas</label><input type="text" id="f-notes" value="${esc(prov.notes||'')}"/></div>
+    </div>`;
+    mf.innerHTML='<button class="btn-ghost" onclick="cerrarModal()">Cancelar</button><button class="btn btn-b" onclick="actualizarProveedor()">Guardar cambios</button>';
+  }
   el('overlay').style.display='flex';
   setTimeout(()=>{ const fi=el('modal-body').querySelector('input,select'); if(fi) fi.focus(); },100);
 }
@@ -732,6 +766,33 @@ async function guardarProveedor(){
   await api('agregar','proveedores',fila);
 }
 
+async function actualizarProveedor(){
+  const id=gv('f-id');
+  const name=gv('f-name'); if(!name){alert('Ingresá la razón social');return;}
+  const pIndex = S.findIndex(x => x.id === id);
+  if(pIndex === -1) return;
+
+  const cambios = {
+    name: name,
+    cuit: gv('f-cuit'),
+    contact: gv('f-contact'),
+    phone: gv('f-phone'),
+    email: gv('f-email'),
+    payDays: parseInt(el('f-paydays')?.value)||0,
+    cat: gv('f-cat')||'Otros',
+    active: el('f-active').value === 'true',
+    notes: gv('f-notes')
+  };
+
+  // Actualizar localmente
+  S[pIndex] = { ...S[pIndex], ...cambios };
+  el('overlay').style.display='none';
+  render();
+
+  // Enviar a la hoja
+  await api('actualizar','proveedores', null, id, cambios);
+}
+
 function pagoRapido(mid){
   const m=M.find(x=>x.id===mid); if(!m) return;
   abrirModal('pago',m.sid);
@@ -757,20 +818,3 @@ function exportarCSV(tipo){
     nombre='proveedores';
   }
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`${nombre}_${hoy()}.csv`;
-  a.click();
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════════════════
-el('empresa-title').textContent=EMPRESA;
-cargarDatos();
-// Auto-refresh cada 2 minutos
-setInterval(()=>{ if(!modalActivo) cargarDatos(); }, 120000);
-</script>
-</body>
-</html>
