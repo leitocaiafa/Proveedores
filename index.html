@@ -115,7 +115,7 @@ let tab='dashboard',detId=null,modalTipo=null,editando=null;
 let busq='',fStatus='',fSupp='';
 
 const el=id=>document.getElementById(id);
-const fmt$=n=>'$ '+Math.round(n||0).toLocaleString('es-AR');
+const fmt$=n=>'$ '+(+(n||0)).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function parseToISO(s){
   if(!s)return'';s=String(s).trim();
   if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
